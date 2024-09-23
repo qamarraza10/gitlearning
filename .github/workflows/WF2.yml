@@ -1,5 +1,5 @@
-# .github/workflows/long-running-workflow.yml
-name: Long Running Workflow
+# .github/workflows/WF2long-running-workflow.yml
+name: Long Running Workflow2
 on:
   workflow_dispatch: # Manually trigger the workflow to test
 concurrency:
