@@ -17,7 +17,7 @@ jobs:
       - name: Your Actual Workflow Job
         run: |
           # Simulate some work or run your actual workflow steps
-          sleep 100  # Replace this with actual steps
+          sleep 40  # Replace this with actual steps
 
       - name: Record end time
         id: end_time
