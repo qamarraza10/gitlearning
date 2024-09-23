@@ -12,8 +12,8 @@ jobs:
       cancel-in-progress: false  # Don't cancel any in-progress workflow
     steps:
       - name: Start Long-Running Job
-        run: |89
-          echo9 "Starting a long job that takes 5 minutes..."
+        run: |
+          echo "Starting a long job that takes 5 minutes..."
           sleep 300  # Simulates a job that runs for 5 minutes (300 seconds)
       - name: Job Completed
         run: echo "Long job completed."
