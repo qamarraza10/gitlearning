@@ -1,0 +1,19 @@
+name: Notify New Relic on Failure
+
+on:
+  workflow_run:
+    workflows: ["Long Running Workflow"]
+    types:
+      - completed
+
+jobs:
+  notify_new_relic:
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Send failure event to New Relic
+        run: |
+          curl -X POST https://insights-collector.newrelic.com/v1/accounts/3398389/events \
+          -H "Content-Type: application/json" \
+          -H "X-Insert-Key: NRAK-QVBQO5I2XYFHO8CUT7W9YVQ7W8A" \
+          -d '{"eventType": "GitHubWorkflowFailure", "repo": "${{ github.repository }}", "workflow": "${{ github.workflow }}", "status": "${{ job.status }}", "url": "${{ github.server_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'
