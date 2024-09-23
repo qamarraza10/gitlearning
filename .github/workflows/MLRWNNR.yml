@@ -1,0 +1,35 @@
+name: Monitor Long Running Workflow and Notify New Relic
+
+on:
+  workflow_run:
+    workflows: ["Long Running Workflow"]
+    types:
+      - completed
+
+jobs:
+  check_duration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record start time
+        id: start_time
+        run: echo "start_time=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Your Actual Workflow Job
+        run: |
+          # Simulate some work or run your actual workflow steps
+          sleep 160  # Replace this with actual job steps, for example: run tests, build project, etc.
+
+      - name: Record end time
+        id: end_time
+        run: echo "end_time=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Check duration and notify New Relic if more than 2.5 minutes
+        run: |
+          duration=$(( ${{ env.end_time }} - ${{ env.start_time }} ))
+          echo "Workflow duration: $duration seconds"
+          if [ $duration -gt 150 ]; then  # 150 seconds = 2.5 minutes
+            curl -X POST https://insights-collector.newrelic.com/v1/accounts/3398389/events \
+            -H "Content-Type: application/json" \
+            -H "X-Insert-Key: NRAK-QVBQO5I2XYFHO8CUT7W9YVQ7W8A" \
+            -d '{"eventType": "GitHubWorkflowLongRun", "repo": "${{ github.repository }}", "workflow": "${{ github.workflow }}", "duration": "'$duration'", "threshold": "150", "url": "${{ github.server_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}", "run_id": "${{ github.run_id }}", "run_number": "${{ github.run_number }}", "sha": "${{ github.sha }}", "ref": "${{ github.ref }}"}'
+          fi
