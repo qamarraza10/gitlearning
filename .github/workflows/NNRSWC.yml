@@ -1,0 +1,34 @@
+name: Notify New Relic on Successful Workflow Completion
+
+on:
+  workflow_run:
+    workflows: ["Long Running Workflow"]
+    types:
+      - completed
+
+jobs:
+  notify_new_relic_on_completion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record start time
+        id: start_time
+        run: echo "start_time=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Your Actual Workflow Job
+        run: |
+          # Simulate some work or run your actual workflow steps
+          sleep 100  # Replace with your real workflow tasks
+
+      - name: Record end time
+        id: end_time
+        run: echo "end_time=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Check workflow status and notify New Relic on success
+        if: ${{ success() }}  # Ensures the step runs only if the workflow succeeds
+        run: |
+          duration=$(( ${{ env.end_time }} - ${{ env.start_time }} ))
+          echo "Workflow duration: $duration seconds"
+          curl -X POST https://insights-collector.newrelic.com/v1/accounts/3398389/events \
+          -H "Content-Type: application/json" \
+          -H "X-Insert-Key: NRAK-QVBQO5I2XYFHO8CUT7W9YVQ7W8A" \
+          -d '{"eventType": "GitHubWorkflowSuccess", "repo": "${{ github.repository }}", "workflow": "${{ github.workflow }}", "duration": "'$duration'", "status": "success", "url": "${{ github.server_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}", "run_id": "${{ github.run_id }}", "run_number": "${{ github.run_number }}", "sha": "${{ github.sha }}", "ref": "${{ github.ref }}"}'
