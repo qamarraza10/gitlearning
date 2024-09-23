@@ -17,7 +17,7 @@ jobs:
       - name: Your Actual Workflow Job
         run: |
           # Simulate some work or run your actual workflow steps
-          sleep 100  # Replace with your real workflow tasks
+          sleep 40  # Replace with your real workflow tasks
 
       - name: Record end time
         id: end_time
@@ -28,7 +28,7 @@ jobs:
         run: |
           duration=$(( ${{ env.end_time }} - ${{ env.start_time }} ))
           echo "Workflow duration: $duration seconds"
-          curl -X POST https://insights-collector.newrelic.com/v1/accounts/3398389/events \
+          curl -X POST https://insights-collector.newrelic.com/v1/accounts/3398389/Metrics & Events \
           -H "Content-Type: application/json" \
           -H "X-Insert-Key: NRAK-QVBQO5I2XYFHO8CUT7W9YVQ7W8A" \
           -d '{"eventType": "GitHubWorkflowSuccess", "repo": "${{ github.repository }}", "workflow": "${{ github.workflow }}", "duration": "'$duration'", "status": "success", "url": "${{ github.server_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}", "run_id": "${{ github.run_id }}", "run_number": "${{ github.run_number }}", "sha": "${{ github.sha }}", "ref": "${{ github.ref }}"}'
