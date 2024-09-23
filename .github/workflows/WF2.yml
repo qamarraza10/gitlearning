@@ -1,0 +1,21 @@
+# .github/workflows/long-running-workflow.yml
+name: Long Running Workflow
+on:
+  workflow_dispatch: # Manually trigger the workflow to test
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  long_job:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: workflow-group-1  # Grouping both workflows under the same concurrency group
+      cancel-in-progress: false  # Don't cancel any in-progress workflow
+    steps:
+      - name: Start Long-Running Job
+        run: |
+          echo "Starting a long job that takes 5 minutes..."
+          sleep 300  # Simulates a job that runs for 5 minutes (300 seconds)
+      - name: Job Completed
+        run: echo "Long job completed."
