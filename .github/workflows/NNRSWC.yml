@@ -16,9 +16,9 @@ jobs:
 
       - name: Your Actual Workflow Job
         run: |
-          # Create and list files
+          # Create and list files for testing
           echo "This is a test file 11." > file11.txt
-          echo "This is a test file 12." > file12.txt
+          echo "This is a test file 2." > file12.txt
 
           # List the files in the current directory
           ls -l
@@ -58,18 +58,23 @@ jobs:
       - name: Notify New Relic on Success
         if: ${{ success() }}  # Ensure this step runs only if the workflow succeeds
         run: |
-          # Gzip the payload and send it to New Relic
-          gzip -c event_payload.json | curl -X POST -H "Content-Type: application/json" \
+          # Send the payload to New Relic and capture the response
+          response=$(gzip -c event_payload.json | curl -s -w "%{http_code}" -o /tmp/newrelic_response.log \
+            -X POST -H "Content-Type: application/json" \
             -H "Api-Key: eu01xx9ddbdb162b1ed2a2f98b070fd1FFFFNRAL" \
             -H "Content-Encoding: gzip" \
             https://insights-collector.newrelic.com/v1/accounts/3398389/events \
-            --data-binary @-
-
-          # Check the response
-          response_code=$?
-          if [ $response_code -ne 0 ]; then
-            echo "Error sending event to New Relic: $response_code"
-            exit 1
+            --data-binary @-)
+          
+          # Extract the HTTP status code from the response
+          http_status="${response: -3}"
+          
+          # Check if the status code indicates success
+          if [[ "$http_status" == "200" || "$http_status" == "202" ]]; then
+            echo "Event sent successfully to New Relic. HTTP status code: $http_status"
+            cat /tmp/newrelic_response.log  # Optional: Show response body
           else
-            echo "Event sent successfully to New Relic."
+            echo "Failed to send event to New Relic. HTTP status code: $http_status"
+            cat /tmp/newrelic_response.log  # Show response body to debug
+            exit 1
           fi
