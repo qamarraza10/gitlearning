@@ -16,8 +16,16 @@ jobs:
 
       - name: Your Actual Workflow Job
         run: |
-          # Simulate some work or run your actual workflow steps
-          sleep 100  # Replace this with actual steps
+          # Create and list files
+          echo "This is a test file 11." > file11.txt
+          echo "This is a test file 12." > file12.txt
+
+          # List the files in the current directory
+          ls -l
+
+          # Display the contents of the files
+          cat file11.txt
+          cat file12.txt
 
       - name: Record end time
         id: end_time
