@@ -18,7 +18,7 @@ jobs:
         run: |
           # Create and list files for testing
           echo "This is a test file 11." > file11.txt
-          echo "This is a test file 2." > file12.txt
+          echo "This is a test file 12." > file12.txt
 
           # List the files in the current directory
           ls -l
@@ -63,7 +63,7 @@ jobs:
             -X POST -H "Content-Type: application/json" \
             -H "Api-Key: eu01xx9ddbdb162b1ed2a2f98b070fd1FFFFNRAL" \
             -H "Content-Encoding: gzip" \
-            https://insights-collector.newrelic.com/v1/accounts/3398389/events \
+            https://insights-collector.eu01.nr-data.net/v1/accounts/3398389/events \
             --data-binary @-)
           
           # Extract the HTTP status code from the response
