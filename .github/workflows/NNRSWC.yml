@@ -17,7 +17,7 @@ jobs:
       - name: Your Actual Workflow Job
         run: |
           # Simulate some work or run your actual workflow steps
-          sleep 30  # Replace this with actual steps
+          sleep 100  # Replace this with actual steps
 
       - name: Record end time
         id: end_time
@@ -26,27 +26,39 @@ jobs:
       - name: Notify New Relic on Success
         if: ${{ success() }}  # Ensures this step runs only if the workflow succeeds
         run: |
+          # Calculate the duration of the workflow run
           duration=$(( ${{ env.end_time }} - ${{ env.start_time }} ))
           echo "Workflow duration: $duration seconds"
-          
-          # Send event to New Relic
-          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST https://insights-collector.newrelic.com/v1/accounts/3398389/events \
+
+          # Create a JSON payload for the event
+          cat <<EOF > event.json
+          {
+            "eventType": "GitHubWorkflowSuccess",
+            "repo": "${{ github.repository }}",
+            "workflow": "${{ github.workflow }}",
+            "duration": "$duration",
+            "status": "success",
+            "url": "${{ github.server_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "run_id": "${{ github.run_id }}",
+            "run_number": "${{ github.run_number }}",
+            "sha": "${{ github.sha }}",
+            "ref": "${{ github.ref }}"
+          }
+          EOF
+
+          # Compress the JSON payload
+          gzip -c event.json > event.json.gz
+
+          # Send the compressed event to New Relic
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
             -H "Content-Type: application/json" \
-            -H "X-Insert-Key: eu01xx9ddbdb162b1ed2a2f98b070fd1FFFFNRAL" \
-            -d '{
-              "eventType": "GitHubWorkflowSuccess0",
-              "repo": "'"${{ github.repository }}"'",
-              "workflow": "'"${{ github.workflow }}"'",
-              "duration": "'"$duration"'",
-              "status": "success",
-              "url": "'"${{ github.server_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}"'",
-              "run_id": "'"${{ github.run_id }}"'",
-              "run_number": "'"${{ github.run_number }}"'",
-              "sha": "'"${{ github.sha }}"'",
-              "ref": "'"${{ github.ref }}"'"
-            }'
+            -H "Api-Key: eu01xx9ddbdb162b1ed2a2f98b070fd1FFFFNRAL" \
+            -H "Content-Encoding: gzip" \
+            https://insights-collector.newrelic.com/v1/accounts/3398389/events \
+            --data-binary @event.json.gz
           )
 
+          # Check the response and output appropriate messages
           echo "New Relic Response Code: $response"
           if [ "$response" -ne 200 ]; then
             echo "Error sending event to New Relic: $response"
