@@ -32,9 +32,9 @@ jobs:
           # Send event to New Relic
           response=$(curl -s -o /dev/null -w "%{http_code}" -X POST https://insights-collector.newrelic.com/v1/accounts/3398389/events \
             -H "Content-Type: application/json" \
-            -H "X-Insert-Key: NRII-tBn1Y8JfrSss9kdWz9fU4Dd0H87q4eSV" \
+            -H "X-Insert-Key: eu01xx9ddbdb162b1ed2a2f98b070fd1FFFFNRAL" \
             -d '{
-              "eventType": "GitHubWorkflowSuccess",
+              "eventType": "GitHubWorkflowSuccess0",
               "repo": "'"${{ github.repository }}"'",
               "workflow": "'"${{ github.workflow }}"'",
               "duration": "'"$duration"'",
