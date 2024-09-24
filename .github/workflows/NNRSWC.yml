@@ -23,15 +23,34 @@ jobs:
         id: end_time
         run: echo "end_time=$(date +%s)" >> $GITHUB_ENV
 
-      - name: Check workflow status and notify New Relic on success
-        if: ${{ success() }}  # Ensures the step runs only if the workflow succeeds
+      - name: Notify New Relic on Success
+        if: ${{ success() }}  # Ensures this step runs only if the workflow succeeds
         run: |
           duration=$(( ${{ env.end_time }} - ${{ env.start_time }} ))
           echo "Workflow duration: $duration seconds"
           
-          # Notify New Relic and log the response for debugging
-          curl -X POST https://insights-collector.newrelic.com/v1/accounts/3398389/events \
+          # Send event to New Relic
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST https://insights-collector.newrelic.com/v1/accounts/3398389/events \
             -H "Content-Type: application/json" \
             -H "X-Insert-Key: NRAK-QVBQO5I2XYFHO8CUT7W9YVQ7W8A" \
-            -d '{"eventType": "GitHubWorkflowSuccess", "repo": "${{ github.repository }}", "workflow": "${{ github.workflow }}", "duration": "'$duration'", "status": "success", "url": "${{ github.server_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}", "run_id": "${{ github.run_id }}", "run_number": "${{ github.run_number }}", "sha": "${{ github.sha }}", "ref": "${{ github.ref }}"}' \
-            -w "HTTP Response Code: %{http_code}\n"   # Logs the HTTP response code
+            -d '{
+              "eventType": "GitHubWorkflowSuccess",
+              "repo": "'"${{ github.repository }}"'",
+              "workflow": "'"${{ github.workflow }}"'",
+              "duration": "'"$duration"'",
+              "status": "success",
+              "url": "'"${{ github.server_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}"'",
+              "run_id": "'"${{ github.run_id }}"'",
+              "run_number": "'"${{ github.run_number }}"'",
+              "sha": "'"${{ github.sha }}"'",
+              "ref": "'"${{ github.ref }}"'"
+            }'
+          )
+
+          echo "New Relic Response Code: $response"
+          if [ "$response" -ne 200 ]; then
+            echo "Error sending event to New Relic: $response"
+            exit 1
+          else
+            echo "Event sent successfully to New Relic."
+          fi
