@@ -17,51 +17,50 @@ jobs:
       - name: Your Actual Workflow Job
         run: |
           # Simulate some work or run your actual workflow steps
-          sleep 30  # Replace this with actual steps
+          sleep 100  # Replace this with actual steps
 
       - name: Record end time
         id: end_time
         run: echo "end_time=$(date +%s)" >> $GITHUB_ENV
 
-      - name: Notify New Relic on Success
-        if: ${{ success() }}  # Ensures this step runs only if the workflow succeeds
+      - name: Create JSON payload
+        id: create_payload
         run: |
-          # Calculate the duration of the workflow run
           duration=$(( ${{ env.end_time }} - ${{ env.start_time }} ))
           echo "Workflow duration: $duration seconds"
-
-          # Create a JSON payload for the event
-          cat <<EOF > event.json
-          {
-            "eventType": "GitHubWorkflowSuccess",
-            "repo": "${{ github.repository }}",
-            "workflow": "${{ github.workflow }}",
-            "duration": "$duration",
-            "status": "success",
-            "url": "${{ github.server_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-            "run_id": "${{ github.run_id }}",
-            "run_number": "${{ github.run_number }}",
-            "sha": "${{ github.sha }}",
-            "ref": "${{ github.ref }}"
-          }
+          
+          # Create the JSON payload
+          cat <<EOF > event_payload.json
+          [
+            {
+              "eventType": "GitHubWorkflowSuccess",
+              "repo": "${{ github.repository }}",
+              "workflow": "${{ github.workflow }}",
+              "duration": "$duration",
+              "status": "success",
+              "url": "${{ github.server_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "run_id": "${{ github.run_id }}",
+              "run_number": "${{ github.run_number }}",
+              "sha": "${{ github.sha }}",
+              "ref": "${{ github.ref }}"
+            }
+          ]
           EOF
 
-          # Compress the JSON payload
-          gzip -c event.json > event.json.gz
-
-          # Send the compressed event to New Relic
-          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-            -H "Content-Type: application/json" \
+      - name: Notify New Relic on Success
+        if: ${{ success() }}  # Ensure this step runs only if the workflow succeeds
+        run: |
+          # Gzip the payload and send it to New Relic
+          gzip -c event_payload.json | curl -X POST -H "Content-Type: application/json" \
             -H "Api-Key: eu01xx9ddbdb162b1ed2a2f98b070fd1FFFFNRAL" \
             -H "Content-Encoding: gzip" \
             https://insights-collector.newrelic.com/v1/accounts/3398389/events \
-            --data-binary @event.json.gz
-          )
+            --data-binary @-
 
-          # Check the response and output appropriate messages
-          echo "New Relic Response Code: $response"
-          if [ "$response" -ne 200 ]; then
-            echo "Error sending event to New Relic: $response"
+          # Check the response
+          response_code=$?
+          if [ $response_code -ne 0 ]; then
+            echo "Error sending event to New Relic: $response_code"
             exit 1
           else
             echo "Event sent successfully to New Relic."
