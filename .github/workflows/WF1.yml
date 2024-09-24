@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Start Long-Running Job
         run: |
-          echo "Starting a long job that takes 1 minutes..."
-          sleep 60  # Simulates a job that runs for 1 minutes (60 seconds)
+          echo "Starting a long job that takes 30 seconds..."
+          sleep 30  # Simulates a job that runs for 30 seconds
       - name: Job Completed
         run: echo "Long job completed."
